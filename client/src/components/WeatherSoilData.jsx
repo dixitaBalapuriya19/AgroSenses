@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { t } from '../translations'
+import { API_BASE_URL } from '../config/api'
 import { WarningIcon, WeatherIcon, SoilIcon, ClipboardIcon, CheckCircleIcon, DropletIcon, ThermometerIcon, CloudRainIcon, FlaskIcon, SeedlingIcon, LightbulbIcon } from './Icons'
 
 const WeatherSoilData = ({ onBack, language = 'english' }) => {
@@ -20,12 +21,9 @@ const WeatherSoilData = ({ onBack, language = 'english' }) => {
         <span>{children}</span>
       </div>
     );
-  };  const location = 'Rajkot, Gujarat' // Default location
-  
-  // API Base URL
-  const API_BASE_URL = window.location.hostname.includes('ngrok')
-    ? `${window.location.protocol}//${window.location.hostname}/api`
-    : 'http://localhost:8000/api'
+  }
+
+  const location = 'Rajkot, Gujarat' // Default location
 
   useEffect(() => {
     fetchEnvironmentalData()

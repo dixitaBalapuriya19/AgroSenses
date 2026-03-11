@@ -60,7 +60,7 @@ GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash-exp').strip()
 LLAVA_MODEL_ID = "YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection"
 LOCAL_LLM_URL = os.getenv('LOCAL_LLM_URL', 'http://localhost:1234/v1').strip()
 LOCAL_LLM_MODEL = os.getenv('LOCAL_LLM_MODEL', 'llava-llama-3-8b-v1_1-gguf').strip()
-PROVIDER_ORDER = [p.strip() for p in os.getenv('PROVIDER_ORDER', 'local,gemini,hf,mock').split(',') if p.strip()]
+PROVIDER_ORDER = [p.strip() for p in os.getenv('PROVIDER_ORDER', 'gemini,hf,mock').split(',') if p.strip()]
 
 # Environmental Data APIs
 OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY', '').strip()

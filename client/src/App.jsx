@@ -10,6 +10,7 @@ import BasicCareTips from './components/BasicCareTips'
 import SeasonalCareTips from './components/SeasonalCareTips'
 import VoiceAssistant from './components/VoiceAssistant'
 import WeatherSoilData from './components/WeatherSoilData'
+import { API_BASE_URL } from './config/api'
 import { t } from './translations'
 
 function App() {
@@ -54,12 +55,6 @@ function App() {
 
   const toggleTheme = () => setIsDark(!isDark)
 
-  // API Config - Use environment variable or fallback
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 
-    (window.location.hostname.includes('ngrok')
-      ? `${window.location.protocol}//${window.location.hostname}/api`
-      : 'http://localhost:8000/api')
-
   // --- Logic --- (Kept from original)
   const analyzePlantDisease = async (imageData) => {
     try {
@@ -81,7 +76,7 @@ function App() {
       return result
     } catch (error) {
       console.error('Error calling backend API:', error)
-      alert(`Analysis failed: ${error.message}. Please ensure the backend server is running on port 8000.`)
+      alert(`Analysis failed: ${error.message}. Please check that the backend API is reachable.`)
       throw error // Don't fallback to mock data, throw error instead
     }
   }

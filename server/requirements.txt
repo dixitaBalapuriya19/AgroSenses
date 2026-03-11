@@ -5,14 +5,10 @@ requests
 google-generativeai
 fpdf
 reportlab
-transformers
-torch
 pillow
-torchvision
-accelerate
-sentencepiece
 protobuf==3.20.3
 deep-translator
+waitress
 
 # Security Dependencies
 PyJWT==2.8.0

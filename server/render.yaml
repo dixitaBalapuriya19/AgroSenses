@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: agrosense-backend
+    env: python
+    rootDir: server
+    buildCommand: pip install -r requirements.txt
+    startCommand: waitress-serve --host=0.0.0.0 --port=$PORT app:app
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: HOST
+        value: 0.0.0.0
+      - key: FLASK_DEBUG
+        value: false
+      - key: PROVIDER_ORDER
+        value: gemini,hf,mock

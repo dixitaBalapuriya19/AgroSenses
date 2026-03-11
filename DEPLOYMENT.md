@@ -8,6 +8,18 @@
 
 ## 🔧 Backend Deployment (Render)
 
+### 0. Deploy the `server/` service correctly
+
+Use these Render settings for the backend service:
+
+```bash
+Root Directory: server
+Build Command: pip install -r requirements.txt
+Start Command: waitress-serve --host=0.0.0.0 --port=$PORT app:app
+```
+
+Do not install local-model packages such as `torch` or `transformers` on Render unless you are using a much larger instance. This repo now keeps them in `server/requirements-optional-local-models.txt` for local/offline use only.
+
 ### 1. Set Environment Variables in Render Dashboard
 
 Go to your Render service dashboard → **Environment** tab and add:
@@ -39,14 +51,15 @@ DEFAULT_LONGITUDE=70.8022
 
 Test your backend health endpoint:
 ```bash
-curl https://agrosense-backend-otb9.onrender.com/health
+curl https://agrosense-backend-otb9.onrender.com/api/health
 ```
 
 Expected response:
 ```json
 {
   "status": "healthy",
-  "timestamp": "2026-03-11T..."
+  "service": "Plant Disease Detection API",
+  "time": "2026-03-11T...Z"
 }
 ```
 
@@ -90,8 +103,10 @@ After adding the environment variable:
 
 **Fix**:
 1. Test backend directly: `curl https://agrosense-backend-otb9.onrender.com/health`
-2. Check Render logs for errors
-3. Verify backend is not sleeping (Render free tier spins down after 15 min inactivity)
+2. Confirm Render Root Directory is `server`
+3. Confirm Render Start Command is `waitress-serve --host=0.0.0.0 --port=$PORT app:app`
+4. Check Render logs for dependency install or boot failures
+5. Verify backend is not sleeping (Render free tier spins down after 15 min inactivity)
 
 ### CORS Errors in Browser Console
 
@@ -140,8 +155,10 @@ Before deploying, ensure:
 
 - [ ] Backend `CORS_ORIGINS` includes Vercel URL
 - [ ] Frontend `VITE_API_URL` points to Render backend
+- [ ] Render Root Directory is `server`
+- [ ] Render Start Command uses `waitress-serve`
 - [ ] Both services redeployed after config changes
-- [ ] Backend `/health` endpoint responds successfully
+- [ ] Backend `/api/health` endpoint responds successfully
 - [ ] API keys are set in Render environment
 - [ ] Render service is awake (not sleeping)
 
