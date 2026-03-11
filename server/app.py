@@ -14,10 +14,7 @@ from logging.handlers import RotatingFileHandler
 import random
 from datetime import datetime
 from typing import List, Tuple, Optional
-import torch
-import torchvision.transforms as transforms
 from PIL import Image
-from transformers import AutoProcessor, LlavaForConditionalGeneration
 
 import requests
 from flask import Flask, jsonify, request, send_file
@@ -25,6 +22,19 @@ import flask
 from flask_cors import CORS
 from dotenv import load_dotenv
 from deep_translator import GoogleTranslator
+
+# Optional ML libraries (only needed for LLaVA model)
+try:
+    import torch
+    import torchvision.transforms as transforms
+    from transformers import AutoProcessor, LlavaForConditionalGeneration
+    TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    TRANSFORMERS_AVAILABLE = False
+    torch = None
+    transforms = None
+    AutoProcessor = None
+    LlavaForConditionalGeneration = None
 
 
 # ----------------------------------------------------------------------------
