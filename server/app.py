@@ -50,6 +50,7 @@ raw_origins = os.getenv('CORS_ORIGINS', '*')
 CORS_ORIGINS: List[str] = (
     [o.strip() for o in raw_origins.split(',') if o.strip()] if raw_origins != '*' else ['*']
 )
+ALLOW_VERCEL_PREVIEW_ORIGINS = os.getenv('ALLOW_VERCEL_PREVIEW_ORIGINS', 'true').lower() == 'true'
 
 HUGGINGFACE_API_KEY = os.getenv('HUGGINGFACE_API_KEY', '').strip()
 HUGGINGFACE_MODEL = os.getenv('HUGGINGFACE_MODEL', 'linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification').strip()
@@ -75,27 +76,44 @@ DEFAULT_LONGITUDE = float(os.getenv('DEFAULT_LONGITUDE', '70.8022'))
 app = Flask(__name__)
 
 if CORS_ORIGINS == ['*']:
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": "*",
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
-            "expose_headers": ["Content-Type", "Content-Disposition"],
-            "supports_credentials": True,
-            "max_age": 3600
-        }
-    })
+    cors_origins_config = "*"
 else:
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": CORS_ORIGINS,
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
-            "expose_headers": ["Content-Type", "Content-Disposition"],
-            "supports_credentials": True,
-            "max_age": 3600
-        }
-    })
+    cors_origins_config = [origin.rstrip('/') for origin in CORS_ORIGINS]
+    if ALLOW_VERCEL_PREVIEW_ORIGINS:
+        cors_origins_config.append(r"https://.*\.vercel\.app")
+
+CORS(app, resources={
+    r"/api/*": {
+        "origins": cors_origins_config,
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "expose_headers": ["Content-Type", "Content-Disposition"],
+        "supports_credentials": False,
+        "max_age": 3600
+    }
+})
+
+
+def _is_allowed_origin(origin: str) -> bool:
+    normalized_origin = origin.rstrip('/').lower()
+
+    if CORS_ORIGINS == ['*']:
+        return True
+
+    normalized_allowed = [allowed.rstrip('/').lower() for allowed in CORS_ORIGINS]
+    if normalized_origin in normalized_allowed:
+        return True
+
+    for allowed in normalized_allowed:
+        if '*' in allowed:
+            pattern = '^' + re.escape(allowed).replace('\\*', '.*') + '$'
+            if re.match(pattern, normalized_origin):
+                return True
+
+    if ALLOW_VERCEL_PREVIEW_ORIGINS and normalized_origin.startswith('https://') and normalized_origin.endswith('.vercel.app'):
+        return True
+
+    return False
 
 
 def _setup_logging() -> logging.Logger:
@@ -907,13 +925,15 @@ def _log_request(response):
     try:
         # Add CORS headers
         origin = request.headers.get('Origin')
-        if origin:
-            if CORS_ORIGINS == ['*'] or origin in CORS_ORIGINS:
+        if origin and _is_allowed_origin(origin):
+            if CORS_ORIGINS == ['*']:
+                response.headers['Access-Control-Allow-Origin'] = '*'
+            else:
                 response.headers['Access-Control-Allow-Origin'] = origin
                 response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
                 response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-                response.headers['Access-Control-Allow-Credentials'] = 'true'
                 response.headers['Access-Control-Max-Age'] = '3600'
+                response.headers['Vary'] = 'Origin'
         
         # Log request
         duration_ms = None
