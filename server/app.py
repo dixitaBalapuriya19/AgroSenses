@@ -439,6 +439,19 @@ def _parse_data_url(data_url: str) -> Tuple[Optional[str], Optional[bytes]]:
 # Lazy loading globals to avoid startup lag
 _hf_processor = None
 _hf_model = None
+PROVIDER_LAST_ERRORS = {}
+
+
+def _set_provider_error(provider: str, message: str) -> None:
+    PROVIDER_LAST_ERRORS[provider] = message
+
+
+def _clear_provider_error(provider: str) -> None:
+    PROVIDER_LAST_ERRORS.pop(provider, None)
+
+
+def _get_provider_error(provider: str) -> Optional[str]:
+    return PROVIDER_LAST_ERRORS.get(provider)
 
 # ----------------------------------------------------------------------------
 # Local LLM Studio Integration
@@ -449,6 +462,7 @@ def analyze_with_local_llm(image_bytes: bytes) -> Optional[dict]:
     LLM Studio provides OpenAI-compatible API on localhost:1234
     """
     try:
+        _clear_provider_error('local')
         import json
         
         logger.info(f"Analyzing with Local LLM Studio: {LOCAL_LLM_URL}")
@@ -504,6 +518,7 @@ Respond in JSON format:
         
         if response.status_code != 200:
             logger.error(f"Local LLM error: {response.status_code} - {response.text}")
+            _set_provider_error('local', f'http_{response.status_code}')
             return None
             
         result = response.json()
@@ -545,13 +560,16 @@ Respond in JSON format:
                 }
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse Local LLM JSON: {e}")
+            _set_provider_error('local', f'json_parse_failed: {str(e)}')
             return None
             
     except requests.exceptions.RequestException as e:
         logger.warning(f"Local LLM Studio not available: {e}")
+        _set_provider_error('local', f'request_exception: {str(e)}')
         return None
     except Exception as e:
         logger.exception(f"Local LLM error: {e}")
+        _set_provider_error('local', f'unexpected_error: {str(e)}')
         return None
 
 # ----------------------------------------------------------------------------
@@ -563,9 +581,11 @@ def analyze_with_huggingface_api(image_bytes: bytes) -> Optional[dict]:
     Uses specialized plant disease detection model without downloading it.
     """
     try:
+        _clear_provider_error('hf')
         
         if not HUGGINGFACE_API_KEY:
             logger.warning("Hugging Face API key not configured")
+            _set_provider_error('hf', 'missing_huggingface_api_key')
             return None
             
         logger.info(f"Analyzing with Hugging Face Inference API: {HUGGINGFACE_MODEL}")
@@ -588,10 +608,12 @@ def analyze_with_huggingface_api(image_bytes: bytes) -> Optional[dict]:
         
         if response.status_code == 503:
             logger.warning("Model is loading on Hugging Face servers, please wait...")
+            _set_provider_error('hf', 'model_loading_503')
             return None
         
         if response.status_code != 200:
             logger.error(f"Hugging Face API error: {response.status_code} - {response.text}")
+            _set_provider_error('hf', f'http_{response.status_code}')
             return None
         
         result = response.json()
@@ -659,13 +681,16 @@ def analyze_with_huggingface_api(image_bytes: bytes) -> Optional[dict]:
             }
         
         logger.warning("Unexpected Hugging Face API response format")
+        _set_provider_error('hf', 'unexpected_response_format')
         return None
         
     except requests.exceptions.Timeout:
         logger.error("Hugging Face API timeout")
+        _set_provider_error('hf', 'timeout')
         return None
     except Exception as e:
         logger.exception(f"Hugging Face API error: {e}")
+        _set_provider_error('hf', f'unexpected_error: {str(e)}')
         return None
 
 # ----------------------------------------------------------------------------
@@ -792,6 +817,7 @@ def analyze_with_llava(image_bytes: bytes) -> Optional[dict]:
 def analyze_with_gemini(api_key: str, model: str, image_bytes: bytes, mime: str) -> Optional[dict]:
     """Use Google Gemini to analyze the image and return our schema."""
     try:
+        _clear_provider_error('gemini')
         import google.generativeai as genai
         logger.info(f"Configuring Gemini with model '{model}'")
         genai.configure(api_key=api_key)
@@ -897,23 +923,61 @@ def analyze_with_gemini(api_key: str, model: str, image_bytes: bytes, mime: str)
         
         if not text:
             logger.warning("Gemini returned empty text")
+            _set_provider_error('gemini', 'empty_response')
             return None
         
         try:
             import json as _json
-            data = _json.loads(text)
+            normalized_text = text.strip().replace('```json', '').replace('```', '').strip()
+            data = _json.loads(normalized_text)
             # Basic validation
             if isinstance(data, dict) and 'disease' in data and 'confidence' in data and 'plant_name' in data:
                 logger.info(f"Gemini JSON parsed successfully: plant='{data.get('plant_name')}', disease='{data.get('disease')}', confidence={data.get('confidence')}, prescribed_care={bool(data.get('prescribed_care'))}")
                 return data
-            else:
-                logger.warning(f"Gemini JSON missing required keys: {list(data.keys() if isinstance(data, dict) else [])}")
+            if isinstance(data, dict):
+                disease = data.get('disease')
+                description = data.get('description')
+                if disease and description:
+                    data.setdefault('plant_name', 'Unknown Plant')
+                    data.setdefault('confidence', 70)
+                    data.setdefault('severity', 'medium')
+                    data.setdefault('remedies', [])
+                    logger.info("Gemini response accepted with inferred defaults for missing keys")
+                    return data
+                logger.warning(f"Gemini JSON missing required keys: {list(data.keys())}")
+                _set_provider_error('gemini', 'json_missing_required_fields')
+                return None
+
+            logger.warning("Gemini response JSON is not an object")
+            _set_provider_error('gemini', 'json_not_object')
+            return None
         except Exception as e:
+            try:
+                import json as _json
+                start = text.find('{')
+                end = text.rfind('}') + 1
+                if start != -1 and end > start:
+                    extracted = text[start:end]
+                    data = _json.loads(extracted)
+                    if isinstance(data, dict):
+                        data.setdefault('plant_name', 'Unknown Plant')
+                        data.setdefault('disease', 'Unknown Condition')
+                        data.setdefault('confidence', 65)
+                        data.setdefault('severity', 'medium')
+                        data.setdefault('description', 'Gemini returned a partial response.')
+                        data.setdefault('remedies', [])
+                        logger.info("Gemini JSON recovered from embedded object")
+                        return data
+            except Exception:
+                pass
+
             logger.exception(f'Gemini JSON parse failed: {e} | text={text[:200]}')
+            _set_provider_error('gemini', f'json_parse_failed: {str(e)}')
             return None
         return None
     except Exception as e:
         logger.exception(f'Gemini API call failed: {e}')
+        _set_provider_error('gemini', f'api_call_failed: {str(e)}')
         return None
 
 
@@ -1292,7 +1356,7 @@ def analyze():
                     logger.info(f"✅ Local LLM analysis successful: {result.get('plant_name')} - {result.get('disease')}")
                     return jsonify(result)
                 logger.warning("❌ Local LLM analysis returned no result or LLM Studio not running")
-                provider_status[provider_key] = 'failed_or_unavailable'
+                provider_status[provider_key] = _get_provider_error('local') or 'failed_or_unavailable'
             
             # Try Hugging Face Inference API (Specialized Plant Disease Detection)
             if provider_key in ('hf', 'huggingface'):
@@ -1306,7 +1370,7 @@ def analyze():
                     logger.info(f"✅ Hugging Face analysis successful: {result.get('plant_name')} - {result.get('disease')} ({result.get('confidence')}%)")
                     return jsonify(result)
                 logger.warning("❌ Hugging Face Inference API returned no result or model loading")
-                provider_status['hf'] = 'failed_or_unavailable'
+                provider_status['hf'] = _get_provider_error('hf') or 'failed_or_unavailable'
             
             # Try Gemini AI Model (Google)
             if provider_key in ('gemini', 'google'):
@@ -1320,7 +1384,7 @@ def analyze():
                     logger.info(f"✅ Gemini AI analysis successful: {result.get('plant_name')} - {result.get('disease')}")
                     return jsonify(result)
                 logger.warning("❌ Gemini analysis returned no result")
-                provider_status['gemini'] = 'failed_or_unavailable'
+                provider_status['gemini'] = _get_provider_error('gemini') or 'failed_or_unavailable'
             
             # Mock provider (only as configured fallback)
             if provider_key == 'mock':
