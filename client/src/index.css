@@ -1923,6 +1923,39 @@ p {
   padding: 0 0 10px;
 }
 
+.analysis-error-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  border-left: 4px solid var(--ui-accent);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 0 0 12px;
+}
+
+.analysis-error-banner p {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 0.95rem;
+}
+
+.analysis-error-banner__dismiss {
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.analysis-error-banner__dismiss:hover {
+  background: var(--ui-surface-muted);
+}
+
 .back-btn,
 .btn-scan-another button,
 .btn-download {

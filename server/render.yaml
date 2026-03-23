@@ -15,3 +15,7 @@ services:
         value: false
       - key: PROVIDER_ORDER
         value: gemini,hf,mock
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: ALLOW_MOCK_FALLBACK
+        value: "false"

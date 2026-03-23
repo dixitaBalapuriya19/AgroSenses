@@ -23,6 +23,7 @@ function App() {
   const [uploadedImage, setUploadedImage] = useState(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisResult, setAnalysisResult] = useState(null)
+  const [analysisError, setAnalysisError] = useState(null)
   const [scanHistory, setScanHistory] = useState([])
   const [language, setLanguage] = useState(() => {
     // Persist language in localStorage
@@ -57,8 +58,19 @@ function App() {
 
   const toggleTheme = () => setIsDark(!isDark)
 
+  const formatProviderStatus = (providerStatus) => {
+    if (!providerStatus || typeof providerStatus !== 'object') {
+      return ''
+    }
+
+    return Object.entries(providerStatus)
+      .map(([provider, status]) => `${provider}: ${status}`)
+      .join(' | ')
+  }
+
   const fetchWithApiFallback = async (path, options) => {
     const errors = []
+    const endpointErrors = []
 
     for (const baseUrl of API_BASE_URLS) {
       try {
@@ -68,13 +80,42 @@ function App() {
         }
 
         const body = await response.text().catch(() => '')
+        let parsedBody = null
+        if (body) {
+          try {
+            parsedBody = JSON.parse(body)
+          } catch {
+            parsedBody = null
+          }
+        }
+
+        endpointErrors.push({
+          endpoint: `${baseUrl}${path}`,
+          status: response.status,
+          body,
+          parsedBody
+        })
+
         errors.push(`${baseUrl}${path} -> ${response.status}${body ? `: ${body}` : ''}`)
       } catch (error) {
         errors.push(`${baseUrl}${path} -> ${error.message}`)
       }
     }
 
-    throw new Error(`All backend endpoints failed. ${errors.join(' | ')}`)
+    const combinedError = new Error(`All backend endpoints failed. ${errors.join(' | ')}`)
+    combinedError.endpointErrors = endpointErrors
+
+    const backendError = endpointErrors.find(({ parsedBody }) =>
+      parsedBody && (parsedBody.provider_status || parsedBody.details || parsedBody.error)
+    )
+
+    if (backendError) {
+      combinedError.status = backendError.status
+      combinedError.backend = backendError.parsedBody
+      combinedError.providerStatus = backendError.parsedBody.provider_status
+    }
+
+    throw combinedError
   }
 
   // --- Logic --- (Kept from original)
@@ -93,13 +134,14 @@ function App() {
 
         clearTimeout(timeoutId)
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error(`Backend error ${response.status}:`, errorText)
-          throw new Error(`Backend error: ${response.status}`)
+        const result = await response.json()
+        if (result?.is_mock) {
+          const mockError = new Error('Backend returned demo fallback data instead of real AI analysis.')
+          mockError.providerStatus = result?.provider_status
+          mockError.isMock = true
+          throw mockError
         }
 
-        const result = await response.json()
         console.log('Real-time analysis successful:', result)
         return result
       } catch (error) {
@@ -113,19 +155,24 @@ function App() {
           continue
         }
 
+        const backendMessage = error?.backend?.details || error?.backend?.error
         const message = timedOut
           ? 'Backend timed out while analyzing the image. The Render service may be waking up or unavailable. Please wait a moment and try again.'
-          : `Analysis failed: ${error.message}. Please check that the backend API is reachable.`
+          : backendMessage || error?.message || 'Analysis failed. Please check backend configuration.'
 
         console.error('Error calling backend API:', error)
-        alert(message)
-        throw error
+        const normalizedError = new Error(message)
+        normalizedError.status = error?.status
+        normalizedError.providerStatus = error?.providerStatus || error?.backend?.provider_status
+        normalizedError.isMock = Boolean(error?.isMock)
+        throw normalizedError
       }
     }
   }
 
   const performAnalysis = async (imageData) => {
     setIsAnalyzing(true)
+    setAnalysisError(null)
     setAnalysisResult(null) // Clear previous results
     try {
       const result = await analyzePlantDisease(imageData)
@@ -134,8 +181,14 @@ function App() {
       setCurrentPage('analysis') // Navigate to analysis page
     } catch (error) {
       console.error('Analysis failed:', error)
-      setIsAnalyzing(false)
-      setCurrentPage('home') // Go back to home on error
+      const providerStatusSummary = formatProviderStatus(error?.providerStatus)
+      const bannerMessage = providerStatusSummary
+        ? `${error.message} Provider status: ${providerStatusSummary}`
+        : error.message
+
+      setAnalysisError(bannerMessage)
+      setUploadedImage(null)
+      setCurrentPage('analysis')
     } finally {
       setIsAnalyzing(false)
     }
@@ -143,6 +196,7 @@ function App() {
 
   const handleImageSelected = (imageData) => {
     console.log('Image selected, starting analysis...')
+    setAnalysisError(null)
     setUploadedImage(imageData)
     setCurrentPage('analysis') // Navigate to analysis page immediately
     performAnalysis(imageData)
@@ -151,6 +205,7 @@ function App() {
   const resetAnalysis = () => {
     setUploadedImage(null)
     setAnalysisResult(null)
+    setAnalysisError(null)
     setIsAnalyzing(false)
   }
 
@@ -283,6 +338,20 @@ function App() {
                   ← {t('backToHome', language)}
                 </button>
               </div>
+
+              {analysisError && (
+                <div className="analysis-error-banner" role="alert">
+                  <p>{analysisError}</p>
+                  <button
+                    className="analysis-error-banner__dismiss"
+                    onClick={() => setAnalysisError(null)}
+                    aria-label="Dismiss analysis error"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
               <UploadZone language={language} onImageSelected={handleImageSelected} />
 
               <ScanHistory

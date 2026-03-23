@@ -55,11 +55,12 @@ ALLOW_VERCEL_PREVIEW_ORIGINS = os.getenv('ALLOW_VERCEL_PREVIEW_ORIGINS', 'true')
 HUGGINGFACE_API_KEY = os.getenv('HUGGINGFACE_API_KEY', '').strip()
 HUGGINGFACE_MODEL = os.getenv('HUGGINGFACE_MODEL', 'linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification').strip()
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
-GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash-exp').strip()
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash').strip()
 LLAVA_MODEL_ID = "YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection"
 LOCAL_LLM_URL = os.getenv('LOCAL_LLM_URL', 'http://localhost:1234/v1').strip()
 LOCAL_LLM_MODEL = os.getenv('LOCAL_LLM_MODEL', 'llava-llama-3-8b-v1_1-gguf').strip()
 PROVIDER_ORDER = [p.strip() for p in os.getenv('PROVIDER_ORDER', 'gemini,hf,mock').split(',') if p.strip()]
+ALLOW_MOCK_FALLBACK = os.getenv('ALLOW_MOCK_FALLBACK', 'false').lower() == 'true'
 LOCAL_LLM_TIMEOUT_SECONDS = int(os.getenv('LOCAL_LLM_TIMEOUT_SECONDS', '12'))
 HUGGINGFACE_TIMEOUT_SECONDS = int(os.getenv('HUGGINGFACE_TIMEOUT_SECONDS', '20'))
 GEMINI_TIMEOUT_SECONDS = int(os.getenv('GEMINI_TIMEOUT_SECONDS', '60'))
@@ -965,10 +966,23 @@ def index():
 
 @app.get('/api/health')
 def health():
+    configured_real_providers = []
+    if GEMINI_API_KEY:
+        configured_real_providers.append('gemini')
+    if HUGGINGFACE_API_KEY:
+        configured_real_providers.append('hf')
+
     return jsonify({
         'status': 'healthy',
         'service': 'Plant Disease Detection API',
-        'time': datetime.utcnow().isoformat() + 'Z'
+        'time': datetime.utcnow().isoformat() + 'Z',
+        'ai': {
+            'provider_order': PROVIDER_ORDER,
+            'configured_real_providers': configured_real_providers,
+            'mock_fallback_enabled': ALLOW_MOCK_FALLBACK,
+            'gemini_model': GEMINI_MODEL,
+            'ready_for_real_analysis': len(configured_real_providers) > 0
+        }
     })
 
 
@@ -1263,50 +1277,81 @@ def analyze():
     # AI-POWERED ANALYSIS: Try AI providers in configured order
     # This uses real-time AI models (Gemini/LLaVA) to analyze the uploaded image
     # NO predefined disease data is used - all analysis is AI-generated
+    provider_status = {}
+
     for provider in PROVIDER_ORDER:
         try:
-            logger.info(f"🤖 AI Analysis Provider attempt: {provider}")
+            provider_key = provider.lower()
+            logger.info(f"🤖 AI Analysis Provider attempt: {provider_key}")
             
             # Try Local LLM Studio
-            if provider.lower() == 'local':
+            if provider_key == 'local':
                 logger.info("Using Local LLM Studio for real-time plant analysis")
                 result = analyze_with_local_llm(img_bytes)
                 if result:
                     logger.info(f"✅ Local LLM analysis successful: {result.get('plant_name')} - {result.get('disease')}")
                     return jsonify(result)
                 logger.warning("❌ Local LLM analysis returned no result or LLM Studio not running")
+                provider_status[provider_key] = 'failed_or_unavailable'
             
             # Try Hugging Face Inference API (Specialized Plant Disease Detection)
-            if provider.lower() in ('hf', 'huggingface'):
+            if provider_key in ('hf', 'huggingface'):
+                if not HUGGINGFACE_API_KEY:
+                    provider_status['hf'] = 'missing_huggingface_api_key'
+                    logger.warning("Skipping Hugging Face provider: API key not configured")
+                    continue
                 logger.info("Using Hugging Face Inference API for plant disease detection")
                 result = analyze_with_huggingface_api(img_bytes)
                 if result:
                     logger.info(f"✅ Hugging Face analysis successful: {result.get('plant_name')} - {result.get('disease')} ({result.get('confidence')}%)")
                     return jsonify(result)
                 logger.warning("❌ Hugging Face Inference API returned no result or model loading")
+                provider_status['hf'] = 'failed_or_unavailable'
             
             # Try Gemini AI Model (Google)
-            if provider.lower() in ('gemini', 'google') and GEMINI_API_KEY:
+            if provider_key in ('gemini', 'google'):
+                if not GEMINI_API_KEY:
+                    provider_status['gemini'] = 'missing_gemini_api_key'
+                    logger.warning("Skipping Gemini provider: API key not configured")
+                    continue
                 logger.info("Using Gemini AI model for real-time cognitive plant analysis")
                 result = analyze_with_gemini(GEMINI_API_KEY, GEMINI_MODEL, img_bytes, mime)
                 if result:
                     logger.info(f"✅ Gemini AI analysis successful: {result.get('plant_name')} - {result.get('disease')}")
                     return jsonify(result)
                 logger.warning("❌ Gemini analysis returned no result")
+                provider_status['gemini'] = 'failed_or_unavailable'
             
             # Mock provider (only as configured fallback)
-            if provider.lower() == 'mock':
+            if provider_key == 'mock':
+                if not ALLOW_MOCK_FALLBACK:
+                    provider_status['mock'] = 'disabled'
+                    logger.warning("Skipping mock provider: ALLOW_MOCK_FALLBACK is false")
+                    continue
                 logger.warning("⚠️ Using mock provider - AI models unavailable or failed")
-                return jsonify(generate_mock_result())
+                mock_result = generate_mock_result()
+                mock_result['provider_status'] = provider_status
+                return jsonify(mock_result)
                 
         except Exception as e:
-            logger.exception(f"❌ Provider '{provider}' failed with error: {e}")
+            provider_status[provider_key] = f"error: {str(e)}"
+            logger.exception(f"❌ Provider '{provider_key}' failed with error: {e}")
             logger.info("Trying next provider...")
 
     # Final fallback only when ALL AI providers fail
     logger.error("🚨 CRITICAL: All AI providers failed or not configured!")
     logger.error("Please ensure Gemini API key is set or LLaVA model is available")
-    return jsonify(generate_mock_result())
+    if ALLOW_MOCK_FALLBACK:
+        mock_result = generate_mock_result()
+        mock_result['provider_status'] = provider_status
+        return jsonify(mock_result)
+
+    return jsonify({
+        'error': 'Real-time analysis is currently unavailable.',
+        'details': 'No AI provider could process this image. Configure GEMINI_API_KEY or HUGGINGFACE_API_KEY on the backend deployment.',
+        'provider_status': provider_status,
+        'is_mock': False
+    }), 503
 
 
 # ----------------------------------------------------------------------------
