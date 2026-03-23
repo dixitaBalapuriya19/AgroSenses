@@ -12,6 +12,9 @@ import WeatherSoilData from './components/WeatherSoilData'
 import { API_BASE_URLS } from './config/api'
 import { t } from './translations'
 
+const ANALYZE_TIMEOUT_MS = 180000
+const ANALYZE_MAX_ATTEMPTS = 2
+
 function App() {
   // Navigation State
   const [currentPage, setCurrentPage] = useState('home') // 'home', 'basic', 'seasonal', 'analysis', 'environmental'
@@ -76,27 +79,48 @@ function App() {
 
   // --- Logic --- (Kept from original)
   const analyzePlantDisease = async (imageData) => {
-    try {
-      const response = await fetchWithApiFallback('/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imageData }),
-        signal: AbortSignal.timeout(30000) // 30 second timeout
-      })
+    for (let attempt = 1; attempt <= ANALYZE_MAX_ATTEMPTS; attempt++) {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), ANALYZE_TIMEOUT_MS)
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`Backend error ${response.status}:`, errorText)
-        throw new Error(`Backend error: ${response.status}`)
+      try {
+        const response = await fetchWithApiFallback('/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: imageData }),
+          signal: controller.signal
+        })
+
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error(`Backend error ${response.status}:`, errorText)
+          throw new Error(`Backend error: ${response.status}`)
+        }
+
+        const result = await response.json()
+        console.log('Real-time analysis successful:', result)
+        return result
+      } catch (error) {
+        clearTimeout(timeoutId)
+        const timedOut = error?.name === 'AbortError' || error?.name === 'TimeoutError' || String(error?.message || '').includes('signal timed out')
+        const isLastAttempt = attempt === ANALYZE_MAX_ATTEMPTS
+
+        if (timedOut && !isLastAttempt) {
+          console.warn(`Analysis attempt ${attempt} timed out. Retrying once...`)
+          await new Promise((resolve) => setTimeout(resolve, 2000))
+          continue
+        }
+
+        const message = timedOut
+          ? 'Backend timed out while analyzing the image. The Render service may be waking up or unavailable. Please wait a moment and try again.'
+          : `Analysis failed: ${error.message}. Please check that the backend API is reachable.`
+
+        console.error('Error calling backend API:', error)
+        alert(message)
+        throw error
       }
-      
-      const result = await response.json()
-      console.log('Real-time analysis successful:', result)
-      return result
-    } catch (error) {
-      console.error('Error calling backend API:', error)
-      alert(`Analysis failed: ${error.message}. Please check that the backend API is reachable.`)
-      throw error // Don't fallback to mock data, throw error instead
     }
   }
 

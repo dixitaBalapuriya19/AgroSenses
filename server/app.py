@@ -60,6 +60,9 @@ LLAVA_MODEL_ID = "YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection"
 LOCAL_LLM_URL = os.getenv('LOCAL_LLM_URL', 'http://localhost:1234/v1').strip()
 LOCAL_LLM_MODEL = os.getenv('LOCAL_LLM_MODEL', 'llava-llama-3-8b-v1_1-gguf').strip()
 PROVIDER_ORDER = [p.strip() for p in os.getenv('PROVIDER_ORDER', 'gemini,hf,mock').split(',') if p.strip()]
+LOCAL_LLM_TIMEOUT_SECONDS = int(os.getenv('LOCAL_LLM_TIMEOUT_SECONDS', '12'))
+HUGGINGFACE_TIMEOUT_SECONDS = int(os.getenv('HUGGINGFACE_TIMEOUT_SECONDS', '20'))
+GEMINI_TIMEOUT_SECONDS = int(os.getenv('GEMINI_TIMEOUT_SECONDS', '60'))
 
 # Environmental Data APIs
 OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY', '').strip()
@@ -495,7 +498,7 @@ Respond in JSON format:
         response = requests.post(
             f"{LOCAL_LLM_URL}/chat/completions",
             json=payload,
-            timeout=15  # 15 second timeout - falls back to Gemini if slow
+            timeout=LOCAL_LLM_TIMEOUT_SECONDS
         )
         
         if response.status_code != 200:
@@ -579,7 +582,7 @@ def analyze_with_huggingface_api(image_bytes: bytes) -> Optional[dict]:
             api_url,
             headers=headers,
             data=image_bytes,
-            timeout=30
+            timeout=HUGGINGFACE_TIMEOUT_SECONDS
         )
         
         if response.status_code == 503:
@@ -881,7 +884,7 @@ def analyze_with_gemini(api_key: str, model: str, image_bytes: bytes, mime: str)
         logger.info(f"Calling Gemini generate_content with enhanced real plant identification prompt...")
         resp = m.generate_content(
             parts,
-            request_options={"timeout": 120},
+            request_options={"timeout": GEMINI_TIMEOUT_SECONDS},
             generation_config={"response_mime_type": "application/json"}
         )
         
@@ -1234,8 +1237,14 @@ def list_diseases():
     return jsonify(diseases)
 
 
-@app.post('/api/analyze')
+@app.route('/api/analyze', methods=['GET', 'POST'])
 def analyze():
+    if request.method == 'GET':
+        return jsonify({
+            'status': 'ok',
+            'message': 'Use POST /api/analyze with JSON body: {"image": "data:image/...;base64,..."}'
+        }), 200
+
     if not request.is_json:
         return jsonify({'error': 'Content-Type must be application/json'}), 415
 
