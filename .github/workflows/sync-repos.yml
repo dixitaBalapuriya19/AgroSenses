@@ -1,0 +1,101 @@
+name: Sync Repositories
+
+on:
+  schedule:
+    # Run every day at 8 AM UTC
+    - cron: '0 8 * * *'
+  
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+  
+  # Also run on push to main branch
+  push:
+    branches:
+      - main
+
+env:
+  GIT_AUTHOR_NAME: github-actions[bot]
+  GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
+  GIT_COMMITTER_NAME: github-actions[bot]
+  GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "${{ env.GIT_AUTHOR_NAME }}"
+          git config --global user.email "${{ env.GIT_AUTHOR_EMAIL }}"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/dixitaBalapuriya19/agrosense.git 2>/dev/null || true
+          git remote -v
+
+      - name: Fetch from all remotes
+        run: |
+          git fetch origin main
+          git fetch upstream main
+
+      - name: Check for differences
+        id: diff
+        run: |
+          DIFF_COUNT=$(git rev-list --count upstream/main..origin/main)
+          UPSTREAM_DIFF=$(git rev-list --count origin/main..upstream/main)
+          echo "origin_ahead=$DIFF_COUNT" >> $GITHUB_OUTPUT
+          echo "upstream_ahead=$UPSTREAM_DIFF" >> $GITHUB_OUTPUT
+          echo "**Sync Status**" >> $GITHUB_STEP_SUMMARY
+          echo "- Origin ahead of upstream: $DIFF_COUNT commits" >> $GITHUB_STEP_SUMMARY
+          echo "- Upstream ahead of origin: $UPSTREAM_DIFF commits" >> $GITHUB_STEP_SUMMARY
+
+      - name: Sync from upstream to origin
+        if: steps.diff.outputs.upstream_ahead > 0
+        run: |
+          git checkout main
+          git merge upstream/main -m "chore: sync from upstream" || {
+            echo "Merge conflict detected. Aborting merge."
+            git merge --abort
+            echo "**⚠️ Merge Conflict Detected**" >> $GITHUB_STEP_SUMMARY
+            echo "Manual intervention required to resolve upstream changes." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
+          git push origin main
+
+      - name: Sync from origin to upstream
+        if: steps.diff.outputs.origin_ahead > 0
+        run: |
+          git push upstream main --force-with-lease
+        continue-on-error: true
+
+      - name: Create sync report
+        if: always()
+        run: |
+          echo "## Repository Sync Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          git log --oneline -5 >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment on PR if conflicts exist
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ **Sync Alert**: Repository synchronization encountered a merge conflict. Manual intervention may be required to resolve changes between origin and upstream branches.'
+            })
