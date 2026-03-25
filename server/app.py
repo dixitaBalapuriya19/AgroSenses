@@ -21,6 +21,9 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from deep_translator import GoogleTranslator
 
+# Import caching and timeout optimization
+from analysis_cache import analysis_cache, get_optimized_timeout
+
 # Optional ML libraries (only needed for LLaVA model)
 try:
     import torch
@@ -61,9 +64,10 @@ LOCAL_LLM_URL = os.getenv('LOCAL_LLM_URL', 'http://localhost:1234/v1').strip()
 LOCAL_LLM_MODEL = os.getenv('LOCAL_LLM_MODEL', 'llava-llama-3-8b-v1_1-gguf').strip()
 PROVIDER_ORDER = [p.strip() for p in os.getenv('PROVIDER_ORDER', 'gemini,hf,mock').split(',') if p.strip()]
 ALLOW_MOCK_FALLBACK = os.getenv('ALLOW_MOCK_FALLBACK', 'false').lower() == 'true'
-LOCAL_LLM_TIMEOUT_SECONDS = int(os.getenv('LOCAL_LLM_TIMEOUT_SECONDS', '12'))
-HUGGINGFACE_TIMEOUT_SECONDS = int(os.getenv('HUGGINGFACE_TIMEOUT_SECONDS', '20'))
-GEMINI_TIMEOUT_SECONDS = int(os.getenv('GEMINI_TIMEOUT_SECONDS', '60'))
+# OPTIMIZATION: Reduced timeouts for compressed images (faster processing)
+LOCAL_LLM_TIMEOUT_SECONDS = int(os.getenv('LOCAL_LLM_TIMEOUT_SECONDS', '8'))  # was 12
+HUGGINGFACE_TIMEOUT_SECONDS = int(os.getenv('HUGGINGFACE_TIMEOUT_SECONDS', '15'))  # was 20
+GEMINI_TIMEOUT_SECONDS = int(os.getenv('GEMINI_TIMEOUT_SECONDS', '45'))  # was 60
 
 # Environmental Data APIs
 OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY', '').strip()
@@ -1338,6 +1342,14 @@ def analyze():
     if not mime or not img_bytes:
         return jsonify({'error': 'Invalid image data URL'}), 400
 
+    # OPTIMIZATION 1: Check cache first
+    image_hash = analysis_cache.get_image_hash(img_bytes)
+    cached_result = analysis_cache.get(image_hash)
+    if cached_result:
+        logger.info(f"✅ Cache hit! Returning cached result for image {image_hash[:8]}...")
+        cached_result['_from_cache'] = True
+        return jsonify(cached_result)
+
     # AI-POWERED ANALYSIS: Try AI providers in configured order
     # This uses real-time AI models (Gemini/LLaVA) to analyze the uploaded image
     # NO predefined disease data is used - all analysis is AI-generated
@@ -1354,6 +1366,8 @@ def analyze():
                 result = analyze_with_local_llm(img_bytes)
                 if result:
                     logger.info(f"✅ Local LLM analysis successful: {result.get('plant_name')} - {result.get('disease')}")
+                    # Cache the result
+                    analysis_cache.set(image_hash, result)
                     return jsonify(result)
                 logger.warning("❌ Local LLM analysis returned no result or LLM Studio not running")
                 provider_status[provider_key] = _get_provider_error('local') or 'failed_or_unavailable'
@@ -1368,6 +1382,8 @@ def analyze():
                 result = analyze_with_huggingface_api(img_bytes)
                 if result:
                     logger.info(f"✅ Hugging Face analysis successful: {result.get('plant_name')} - {result.get('disease')} ({result.get('confidence')}%)")
+                    # Cache the result
+                    analysis_cache.set(image_hash, result)
                     return jsonify(result)
                 logger.warning("❌ Hugging Face Inference API returned no result or model loading")
                 provider_status['hf'] = _get_provider_error('hf') or 'failed_or_unavailable'
@@ -1382,6 +1398,8 @@ def analyze():
                 result = analyze_with_gemini(GEMINI_API_KEY, GEMINI_MODEL, img_bytes, mime)
                 if result:
                     logger.info(f"✅ Gemini AI analysis successful: {result.get('plant_name')} - {result.get('disease')}")
+                    # Cache the result
+                    analysis_cache.set(image_hash, result)
                     return jsonify(result)
                 logger.warning("❌ Gemini analysis returned no result")
                 provider_status['gemini'] = _get_provider_error('gemini') or 'failed_or_unavailable'
