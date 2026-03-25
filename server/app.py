@@ -1722,7 +1722,8 @@ def generate_report():
         return send_file(
             pdf_output,
             mimetype='application/pdf',
-            as_attachment=True
+            as_attachment=True,
+            download_name=filename
         )
         
     except Exception as e:
