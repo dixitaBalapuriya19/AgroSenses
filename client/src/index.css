@@ -345,6 +345,14 @@ button {
   --poster-color: transparent;
 }
 
+.hero-asset-image {
+  width: 100%;
+  height: 300px;
+  object-fit: contain;
+  display: block;
+  padding: 12px;
+}
+
 .hero-model-meta {
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-sm);
@@ -363,6 +371,11 @@ button {
   font-size: var(--text-xs);
   color: var(--ui-text-muted);
   line-height: 1.35;
+}
+
+.hero-model-meta a {
+  color: var(--ui-accent);
+  text-decoration: underline;
 }
 
 [data-theme="dark"] .hero-model-wrap {
@@ -914,6 +927,10 @@ button {
   .hero-model-wrap,
   .hero-model-viewer {
     min-height: 240px;
+    height: 240px;
+  }
+
+  .hero-asset-image {
     height: 240px;
   }
 

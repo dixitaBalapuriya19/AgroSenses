@@ -4,6 +4,10 @@ import { PlantIcon, AutumnIcon, GlobeIcon, SearchIcon } from './Icons'
 import PlantShader from './PlantShader'
 
 export default function Hero({ language = 'english', isDark = false, onNavigate }) {
+  const freepikAssetUrl = import.meta.env.VITE_HERO_FREEPIK_URL?.trim()
+  const freepikCreditUrl = import.meta.env.VITE_HERO_FREEPIK_CREDIT_URL?.trim() || 'https://www.freepik.com/'
+  const showFreepikAsset = Boolean(freepikAssetUrl)
+
   const features = [
     { id: 'analysis', titleKey: 'instantDiagnosis', descKey: 'instantDiagnosisDesc', Icon: SearchIcon },
     { id: 'basic', titleKey: 'fundamentalCare', descKey: 'fundamentalCareDesc', Icon: PlantIcon },
@@ -59,21 +63,42 @@ export default function Hero({ language = 'english', isDark = false, onNavigate 
         <aside className="hero-landing__visual" aria-label="Plant health workflow">
           <div className="hero-panel hero-panel--model">
             <div className="hero-model-wrap">
-              <model-viewer
-                src="https://threejs.org/examples/models/gltf/Flower/Flower.glb"
-                camera-controls
-                disable-zoom
-                auto-rotate
-                autoplay
-                shadow-intensity="1"
-                exposure="0.95"
-                ar={false}
-                className="hero-model-viewer"
-              />
+              {showFreepikAsset ? (
+                <img
+                  src={freepikAssetUrl}
+                  alt={language === 'gujarati' ? 'છોડ આધારિત ઇલસ્ટ્રેશન' : 'Plant-based illustration'}
+                  className="hero-asset-image"
+                />
+              ) : (
+                <model-viewer
+                  src="https://threejs.org/examples/models/gltf/Flower/Flower.glb"
+                  camera-controls
+                  disable-zoom
+                  auto-rotate
+                  autoplay
+                  shadow-intensity="1"
+                  exposure="0.95"
+                  ar={false}
+                  className="hero-model-viewer"
+                />
+              )}
             </div>
             <div className="hero-model-meta">
-              <strong>{language === 'gujarati' ? 'રિયલ 3D મોડેલ' : 'Real 3D Model'}</strong>
-              <p>{language === 'gujarati' ? 'લાઇવ વેબ મોડેલ સાથે થીમ-મેચ્ડ વિઝ્યુઅલ' : 'Web-fetched 3D asset integrated with your theme'}</p>
+              <strong>
+                {showFreepikAsset
+                  ? (language === 'gujarati' ? 'Freepik ઇલસ્ટ્રેશન' : 'Freepik Illustration')
+                  : (language === 'gujarati' ? 'રિયલ 3D મોડેલ' : 'Real 3D Model')}
+              </strong>
+              <p>
+                {showFreepikAsset
+                  ? (
+                    <>
+                      {language === 'gujarati' ? 'એટ્રિબ્યુશન:' : 'Attribution:'}{' '}
+                      <a href={freepikCreditUrl} target="_blank" rel="noreferrer">Freepik</a>
+                    </>
+                  )
+                  : (language === 'gujarati' ? 'લાઇવ વેબ મોડેલ સાથે થીમ-મેચ્ડ વિઝ્યુઅલ' : 'Web-fetched 3D asset integrated with your theme')}
+              </p>
             </div>
           </div>
         </aside>
