@@ -57,40 +57,43 @@ export default function Hero({ language = 'english', isDark = false, onNavigate 
         </div>
 
         <aside className="hero-landing__visual" aria-label="Plant health workflow">
-          <div className="hero-panel hero-panel--illustration">
-            <div className="botanical-illustration" role="img" aria-label="Botanical illustration">
-              <div className="bio-sun" />
-              <div className="bio-hill bio-hill--back" />
-              <div className="bio-hill bio-hill--front" />
+          <div className="hero-panel hero-panel--isometric">
+            <div className="iso-scene" role="img" aria-label="3D plant intelligence illustration">
+              <div className="iso-floor" />
 
-              <div className="bio-sensor bio-sensor--soil">
-                <span>{language === 'gujarati' ? 'માટી' : 'Soil'}</span>
+              <div className="iso-tile iso-tile--weather">
+                <h4>{language === 'gujarati' ? 'હવામાન' : 'Weather'}</h4>
               </div>
-              <div className="bio-sensor bio-sensor--climate">
-                <span>{language === 'gujarati' ? 'હવામાન' : 'Climate'}</span>
+              <div className="iso-tile iso-tile--soil">
+                <h4>{language === 'gujarati' ? 'માટી' : 'Soil'}</h4>
               </div>
 
-              <div className="bio-plant">
-                <div className="bio-stem" />
-                <div className="bio-leaf bio-leaf--left" />
-                <div className="bio-leaf bio-leaf--right" />
-                <div className="bio-leaf bio-leaf--top" />
+              <div className="iso-pot">
+                <div className="iso-pot-top" />
+                <div className="iso-pot-front" />
+                <div className="iso-pot-side" />
+
+                <div className="iso-stem" />
+                <div className="iso-leaf iso-leaf--left" />
+                <div className="iso-leaf iso-leaf--right" />
+                <div className="iso-leaf iso-leaf--top" />
               </div>
 
-              <svg className="bio-wave" viewBox="0 0 300 120" preserveAspectRatio="none" aria-hidden="true">
-                <path d="M0,70 C45,45 90,95 135,70 C180,45 225,95 300,65" />
-                <path d="M0,88 C50,63 95,110 140,84 C185,58 230,108 300,80" />
-              </svg>
+              <div className="iso-pulse iso-pulse--one" />
+              <div className="iso-pulse iso-pulse--two" />
+
+              <div className="iso-tag iso-tag--ai">AI</div>
+              <div className="iso-tag iso-tag--care">{language === 'gujarati' ? 'કેર' : 'CARE'}</div>
             </div>
 
-            <div className="bio-caption-row">
-              <div className="bio-caption-chip">
-                <strong>{language === 'gujarati' ? 'લાઇવ ઇનપુટ' : 'Live Inputs'}</strong>
-                <span>{language === 'gujarati' ? 'છબી + હવામાન + માટી' : 'Image + Weather + Soil'}</span>
+            <div className="iso-caption-grid">
+              <div className="iso-caption">
+                <strong>{language === 'gujarati' ? 'ઇનપુટ' : 'Input Layer'}</strong>
+                <p>{language === 'gujarati' ? 'છબી + હવામાન + માટી' : 'Image + Weather + Soil'}</p>
               </div>
-              <div className="bio-caption-chip">
-                <strong>{language === 'gujarati' ? 'બુદ્ધિશાળી આઉટપુટ' : 'Smart Output'}</strong>
-                <span>{language === 'gujarati' ? 'નિદાન + સારવાર યોજના' : 'Diagnosis + Care Plan'}</span>
+              <div className="iso-caption">
+                <strong>{language === 'gujarati' ? 'આઉટપુટ' : 'Output Layer'}</strong>
+                <p>{language === 'gujarati' ? 'નિદાન + સારવાર યોજના' : 'Diagnosis + Treatment Plan'}</p>
               </div>
             </div>
           </div>

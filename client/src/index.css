@@ -323,6 +323,225 @@ button {
   gap: var(--space-3);
 }
 
+.hero-panel--isometric {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.iso-scene {
+  position: relative;
+  height: 300px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--ui-surface) 0%, var(--ui-surface-muted) 100%);
+  overflow: hidden;
+}
+
+.iso-floor {
+  position: absolute;
+  width: 280px;
+  height: 180px;
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -50%) rotateX(58deg) rotateZ(-44deg);
+  border: 1px solid var(--ui-border);
+  background: linear-gradient(135deg, rgba(139, 196, 139, 0.28), rgba(36, 52, 36, 0.12));
+}
+
+.iso-tile {
+  position: absolute;
+  min-width: 84px;
+  height: 34px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  transform: skewX(-20deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.iso-tile h4 {
+  font-size: var(--text-xs);
+  color: var(--ui-text);
+  transform: skewX(20deg);
+  letter-spacing: 0.2px;
+}
+
+.iso-tile--weather {
+  right: 48px;
+  top: 56px;
+}
+
+.iso-tile--soil {
+  left: 44px;
+  top: 164px;
+}
+
+.iso-pot {
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  width: 108px;
+  height: 130px;
+  transform: translate(-50%, -50%);
+}
+
+.iso-pot-top {
+  position: absolute;
+  left: 19px;
+  top: 18px;
+  width: 70px;
+  height: 26px;
+  background: var(--ui-surface-muted);
+  border: 1px solid var(--ui-border);
+  transform: skewX(-20deg);
+}
+
+.iso-pot-front {
+  position: absolute;
+  left: 14px;
+  top: 42px;
+  width: 60px;
+  height: 56px;
+  border: 1px solid var(--ui-border);
+  background: linear-gradient(180deg, rgba(45, 90, 45, 0.28), rgba(45, 90, 45, 0.44));
+}
+
+.iso-pot-side {
+  position: absolute;
+  left: 74px;
+  top: 42px;
+  width: 24px;
+  height: 56px;
+  border: 1px solid var(--ui-border);
+  background: linear-gradient(180deg, rgba(36, 52, 36, 0.4), rgba(36, 52, 36, 0.56));
+  transform: skewY(-22deg);
+  transform-origin: left top;
+}
+
+.iso-stem {
+  position: absolute;
+  left: 52px;
+  top: -2px;
+  width: 4px;
+  height: 52px;
+  background: var(--ui-accent);
+}
+
+.iso-leaf {
+  position: absolute;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface-muted);
+}
+
+.iso-leaf--left {
+  width: 30px;
+  height: 18px;
+  left: 22px;
+  top: 6px;
+  border-radius: 16px 0 16px 0;
+  transform: rotate(-28deg);
+}
+
+.iso-leaf--right {
+  width: 32px;
+  height: 18px;
+  left: 55px;
+  top: 10px;
+  border-radius: 0 16px 0 16px;
+  transform: rotate(24deg);
+}
+
+.iso-leaf--top {
+  width: 22px;
+  height: 24px;
+  left: 45px;
+  top: -14px;
+  border-radius: 46% 46% 40% 40%;
+}
+
+.iso-pulse {
+  position: absolute;
+  border: 1px dashed var(--ui-border-hover);
+  border-radius: 50%;
+}
+
+.iso-pulse--one {
+  width: 120px;
+  height: 44px;
+  left: 50%;
+  top: 57%;
+  transform: translate(-50%, -50%) rotate(-18deg);
+}
+
+.iso-pulse--two {
+  width: 150px;
+  height: 58px;
+  left: 50%;
+  top: 57%;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  opacity: 0.56;
+}
+
+.iso-tag {
+  position: absolute;
+  padding: 5px 9px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ui-text-muted);
+  line-height: 1;
+  box-shadow: var(--shadow-sm);
+}
+
+.iso-tag--ai {
+  right: 24px;
+  bottom: 76px;
+}
+
+.iso-tag--care {
+  left: 24px;
+  bottom: 66px;
+}
+
+.iso-caption-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.iso-caption {
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.iso-caption strong {
+  display: block;
+  color: var(--ui-text);
+  font-size: var(--text-xs);
+  margin-bottom: 2px;
+}
+
+.iso-caption p {
+  color: var(--ui-text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+[data-theme="dark"] .iso-scene {
+  background: linear-gradient(180deg, rgba(36, 52, 36, 0.8) 0%, rgba(22, 36, 22, 0.9) 100%);
+}
+
+[data-theme="dark"] .iso-floor {
+  background: linear-gradient(135deg, rgba(139, 196, 139, 0.24), rgba(10, 18, 10, 0.36));
+}
+
 .botanical-illustration {
   position: relative;
   height: 300px;
@@ -643,6 +862,14 @@ button {
   }
 
   .bio-caption-row {
+    grid-template-columns: 1fr;
+  }
+
+  .iso-scene {
+    height: 250px;
+  }
+
+  .iso-caption-grid {
     grid-template-columns: 1fr;
   }
 }
