@@ -323,6 +323,52 @@ button {
   gap: var(--space-3);
 }
 
+.hero-panel--model {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hero-model-wrap {
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--ui-surface) 0%, var(--ui-surface-muted) 100%);
+  overflow: hidden;
+  min-height: 300px;
+}
+
+.hero-model-viewer {
+  width: 100%;
+  height: 300px;
+  background: transparent;
+  --poster-color: transparent;
+}
+
+.hero-model-meta {
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-sm);
+  background: var(--ui-surface);
+  padding: 8px 10px;
+}
+
+.hero-model-meta strong {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--ui-text);
+  margin-bottom: 2px;
+}
+
+.hero-model-meta p {
+  font-size: var(--text-xs);
+  color: var(--ui-text-muted);
+  line-height: 1.35;
+}
+
+[data-theme="dark"] .hero-model-wrap {
+  background: linear-gradient(180deg, rgba(36, 52, 36, 0.8) 0%, rgba(22, 36, 22, 0.92) 100%);
+}
+
 .hero-panel--isometric {
   padding: var(--space-4);
   display: flex;
@@ -863,6 +909,12 @@ button {
 
   .bio-caption-row {
     grid-template-columns: 1fr;
+  }
+
+  .hero-model-wrap,
+  .hero-model-viewer {
+    min-height: 240px;
+    height: 240px;
   }
 
   .iso-scene {

@@ -57,44 +57,23 @@ export default function Hero({ language = 'english', isDark = false, onNavigate 
         </div>
 
         <aside className="hero-landing__visual" aria-label="Plant health workflow">
-          <div className="hero-panel hero-panel--isometric">
-            <div className="iso-scene" role="img" aria-label="3D plant intelligence illustration">
-              <div className="iso-floor" />
-
-              <div className="iso-tile iso-tile--weather">
-                <h4>{language === 'gujarati' ? 'હવામાન' : 'Weather'}</h4>
-              </div>
-              <div className="iso-tile iso-tile--soil">
-                <h4>{language === 'gujarati' ? 'માટી' : 'Soil'}</h4>
-              </div>
-
-              <div className="iso-pot">
-                <div className="iso-pot-top" />
-                <div className="iso-pot-front" />
-                <div className="iso-pot-side" />
-
-                <div className="iso-stem" />
-                <div className="iso-leaf iso-leaf--left" />
-                <div className="iso-leaf iso-leaf--right" />
-                <div className="iso-leaf iso-leaf--top" />
-              </div>
-
-              <div className="iso-pulse iso-pulse--one" />
-              <div className="iso-pulse iso-pulse--two" />
-
-              <div className="iso-tag iso-tag--ai">AI</div>
-              <div className="iso-tag iso-tag--care">{language === 'gujarati' ? 'કેર' : 'CARE'}</div>
+          <div className="hero-panel hero-panel--model">
+            <div className="hero-model-wrap">
+              <model-viewer
+                src="https://threejs.org/examples/models/gltf/Flower/Flower.glb"
+                camera-controls
+                disable-zoom
+                auto-rotate
+                autoplay
+                shadow-intensity="1"
+                exposure="0.95"
+                ar={false}
+                className="hero-model-viewer"
+              />
             </div>
-
-            <div className="iso-caption-grid">
-              <div className="iso-caption">
-                <strong>{language === 'gujarati' ? 'ઇનપુટ' : 'Input Layer'}</strong>
-                <p>{language === 'gujarati' ? 'છબી + હવામાન + માટી' : 'Image + Weather + Soil'}</p>
-              </div>
-              <div className="iso-caption">
-                <strong>{language === 'gujarati' ? 'આઉટપુટ' : 'Output Layer'}</strong>
-                <p>{language === 'gujarati' ? 'નિદાન + સારવાર યોજના' : 'Diagnosis + Treatment Plan'}</p>
-              </div>
+            <div className="hero-model-meta">
+              <strong>{language === 'gujarati' ? 'રિયલ 3D મોડેલ' : 'Real 3D Model'}</strong>
+              <p>{language === 'gujarati' ? 'લાઇવ વેબ મોડેલ સાથે થીમ-મેચ્ડ વિઝ્યુઅલ' : 'Web-fetched 3D asset integrated with your theme'}</p>
             </div>
           </div>
         </aside>
