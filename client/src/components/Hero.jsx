@@ -57,43 +57,40 @@ export default function Hero({ language = 'english', isDark = false, onNavigate 
         </div>
 
         <aside className="hero-landing__visual" aria-label="Plant health workflow">
-          <div className="hero-panel hero-panel--ops">
-            <div className="hero-ops-head">
-              <h3>{language === 'gujarati' ? 'સ્માર્ટ કેર ડેશબોર્ડ' : 'Smart Care Dashboard'}</h3>
-              <span>{language === 'gujarati' ? 'લાઇવ મોડ્યુલ્સ' : 'Live modules'}</span>
+          <div className="hero-panel hero-panel--illustration">
+            <div className="botanical-illustration" role="img" aria-label="Botanical illustration">
+              <div className="bio-sun" />
+              <div className="bio-hill bio-hill--back" />
+              <div className="bio-hill bio-hill--front" />
+
+              <div className="bio-sensor bio-sensor--soil">
+                <span>{language === 'gujarati' ? 'માટી' : 'Soil'}</span>
+              </div>
+              <div className="bio-sensor bio-sensor--climate">
+                <span>{language === 'gujarati' ? 'હવામાન' : 'Climate'}</span>
+              </div>
+
+              <div className="bio-plant">
+                <div className="bio-stem" />
+                <div className="bio-leaf bio-leaf--left" />
+                <div className="bio-leaf bio-leaf--right" />
+                <div className="bio-leaf bio-leaf--top" />
+              </div>
+
+              <svg className="bio-wave" viewBox="0 0 300 120" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0,70 C45,45 90,95 135,70 C180,45 225,95 300,65" />
+                <path d="M0,88 C50,63 95,110 140,84 C185,58 230,108 300,80" />
+              </svg>
             </div>
 
-            <div className="hero-ops-grid">
-              <article className="hero-ops-tile">
-                <h4>{language === 'gujarati' ? 'AI નિદાન' : 'AI Diagnosis'}</h4>
-                <p>{language === 'gujarati' ? 'રોગ, ગંભીરતા અને વિશ્વાસ સ્કોર' : 'Disease, severity, and confidence scoring'}</p>
-              </article>
-              <article className="hero-ops-tile">
-                <h4>{language === 'gujarati' ? 'પર્યાવરણીય ડેટા' : 'Environmental Data'}</h4>
-                <p>{language === 'gujarati' ? 'હવામાન + માટીથી સંદર્ભિત નિર્ણય' : 'Weather + soil contextual decisioning'}</p>
-              </article>
-              <article className="hero-ops-tile">
-                <h4>{language === 'gujarati' ? 'ઋતુવાર વ્યૂહરચના' : 'Seasonal Strategy'}</h4>
-                <p>{language === 'gujarati' ? 'મોસમ અનુસાર કાળજી અને જોખમ દેખરેખ' : 'Season-specific care and risk watchouts'}</p>
-              </article>
-              <article className="hero-ops-tile">
-                <h4>{language === 'gujarati' ? 'રિપોર્ટિંગ' : 'Reporting'}</h4>
-                <p>{language === 'gujarati' ? 'એક-ક્લિક English PDF હેલ્થ રિપોર્ટ' : 'One-click English PDF health report'}</p>
-              </article>
-            </div>
-
-            <div className="hero-ops-strip" aria-label="care execution flow">
-              <div>
-                <strong>{language === 'gujarati' ? 'કૅપ્ચર' : 'Capture'}</strong>
-                <span>{language === 'gujarati' ? 'સ્પષ્ટ છબી અપલોડ કરો' : 'Upload a clear specimen image'}</span>
+            <div className="bio-caption-row">
+              <div className="bio-caption-chip">
+                <strong>{language === 'gujarati' ? 'લાઇવ ઇનપુટ' : 'Live Inputs'}</strong>
+                <span>{language === 'gujarati' ? 'છબી + હવામાન + માટી' : 'Image + Weather + Soil'}</span>
               </div>
-              <div>
-                <strong>{language === 'gujarati' ? 'વિશ્લેષણ' : 'Analyze'}</strong>
-                <span>{language === 'gujarati' ? 'AIથી મૂળ કારણ મેળવો' : 'Get AI root-cause insights'}</span>
-              </div>
-              <div>
-                <strong>{language === 'gujarati' ? 'ક્રિયા' : 'Act'}</strong>
-                <span>{language === 'gujarati' ? 'તાત્કાલિક યોજના અમલમાં મૂકો' : 'Apply treatment and prevention plan'}</span>
+              <div className="bio-caption-chip">
+                <strong>{language === 'gujarati' ? 'બુદ્ધિશાળી આઉટપુટ' : 'Smart Output'}</strong>
+                <span>{language === 'gujarati' ? 'નિદાન + સારવાર યોજના' : 'Diagnosis + Care Plan'}</span>
               </div>
             </div>
           </div>
