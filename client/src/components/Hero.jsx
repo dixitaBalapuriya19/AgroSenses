@@ -57,34 +57,45 @@ export default function Hero({ language = 'english', isDark = false, onNavigate 
         </div>
 
         <aside className="hero-landing__visual" aria-label="Plant health workflow">
-          <div className="hero-panel hero-panel--flow">
-            <h3>{language === 'gujarati' ? 'કેવી રીતે કામ કરે છે' : 'How it works'}</h3>
-            <ol className="hero-flow-list">
-              <li>
-                <strong>{language === 'gujarati' ? 'છબી અપલોડ કરો' : 'Upload a clear image'}</strong>
-                <span>
-                  {language === 'gujarati'
-                    ? 'પાંદડા અથવા દાગવાળા ભાગનો નિકટથી ફોટો લો.'
-                    : 'Capture leaf texture and affected area in one frame.'}
-                </span>
-              </li>
-              <li>
-                <strong>{language === 'gujarati' ? 'AI વિશ્લેષણ મેળવો' : 'Get AI diagnosis'}</strong>
-                <span>
-                  {language === 'gujarati'
-                    ? 'રોગની ઓળખ, વિશ્વાસ સ્કોર અને ગંભીરતા મેળવો.'
-                    : 'Receive disease type, confidence score, and severity.'}
-                </span>
-              </li>
-              <li>
-                <strong>{language === 'gujarati' ? 'ચિકિત્સા યોજના અનુસરો' : 'Apply treatment plan'}</strong>
-                <span>
-                  {language === 'gujarati'
-                    ? 'તાત્કાલિક પગલાં, ઋતુવાર માર્ગદર્શન અને PDF રિપોર્ટ મેળવો.'
-                    : 'Use instant actions, seasonal guidance, and PDF reports.'}
-                </span>
-              </li>
-            </ol>
+          <div className="hero-panel hero-panel--ops">
+            <div className="hero-ops-head">
+              <h3>{language === 'gujarati' ? 'સ્માર્ટ કેર ડેશબોર્ડ' : 'Smart Care Dashboard'}</h3>
+              <span>{language === 'gujarati' ? 'લાઇવ મોડ્યુલ્સ' : 'Live modules'}</span>
+            </div>
+
+            <div className="hero-ops-grid">
+              <article className="hero-ops-tile">
+                <h4>{language === 'gujarati' ? 'AI નિદાન' : 'AI Diagnosis'}</h4>
+                <p>{language === 'gujarati' ? 'રોગ, ગંભીરતા અને વિશ્વાસ સ્કોર' : 'Disease, severity, and confidence scoring'}</p>
+              </article>
+              <article className="hero-ops-tile">
+                <h4>{language === 'gujarati' ? 'પર્યાવરણીય ડેટા' : 'Environmental Data'}</h4>
+                <p>{language === 'gujarati' ? 'હવામાન + માટીથી સંદર્ભિત નિર્ણય' : 'Weather + soil contextual decisioning'}</p>
+              </article>
+              <article className="hero-ops-tile">
+                <h4>{language === 'gujarati' ? 'ઋતુવાર વ્યૂહરચના' : 'Seasonal Strategy'}</h4>
+                <p>{language === 'gujarati' ? 'મોસમ અનુસાર કાળજી અને જોખમ દેખરેખ' : 'Season-specific care and risk watchouts'}</p>
+              </article>
+              <article className="hero-ops-tile">
+                <h4>{language === 'gujarati' ? 'રિપોર્ટિંગ' : 'Reporting'}</h4>
+                <p>{language === 'gujarati' ? 'એક-ક્લિક English PDF હેલ્થ રિપોર્ટ' : 'One-click English PDF health report'}</p>
+              </article>
+            </div>
+
+            <div className="hero-ops-strip" aria-label="care execution flow">
+              <div>
+                <strong>{language === 'gujarati' ? 'કૅપ્ચર' : 'Capture'}</strong>
+                <span>{language === 'gujarati' ? 'સ્પષ્ટ છબી અપલોડ કરો' : 'Upload a clear specimen image'}</span>
+              </div>
+              <div>
+                <strong>{language === 'gujarati' ? 'વિશ્લેષણ' : 'Analyze'}</strong>
+                <span>{language === 'gujarati' ? 'AIથી મૂળ કારણ મેળવો' : 'Get AI root-cause insights'}</span>
+              </div>
+              <div>
+                <strong>{language === 'gujarati' ? 'ક્રિયા' : 'Act'}</strong>
+                <span>{language === 'gujarati' ? 'તાત્કાલિક યોજના અમલમાં મૂકો' : 'Apply treatment and prevention plan'}</span>
+              </div>
+            </div>
           </div>
         </aside>
       </div>
